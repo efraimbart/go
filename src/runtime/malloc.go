@@ -209,12 +209,17 @@ const (
 	// WebAssembly currently has a limit of 4GB linear memory.
 	heapAddrBits = (_64bit*(1-goarch.IsWasm)*(1-goos.IsIos*goarch.IsArm64))*48 + (1-_64bit+goarch.IsWasm)*(32-(goarch.IsMips+goarch.IsMipsle)) + 40*goos.IsIos*goarch.IsArm64
 
+	// Maximum allocation size limit. For 64-bit systems, we use 6GB (the next power of 2
+	// above 5GB) to ensure all arithmetic operations and bounds checks remain safe.
+	// For 32-bit systems, we preserve the existing limit.
+	maxAllocLimit = (_64bit * 6 * 1024 * 1024 * 1024) + ((1 - _64bit) * (1 << 31))
+
 	// maxAlloc is the maximum size of an allocation. On 64-bit,
-	// it's theoretically possible to allocate 1<<heapAddrBits bytes. On
-	// 32-bit, however, this is one less than 1<<32 because the
-	// number of bytes in the address space doesn't actually fit
-	// in a uintptr.
-	maxAlloc = (1 << heapAddrBits) - (1-_64bit)*1
+	// it's theoretically possible to allocate 1<<heapAddrBits bytes, but
+	// we limit this to maxAllocLimit. On 32-bit, this is one less than
+	// 1<<32 because the number of bytes in the address space doesn't
+	// actually fit in a uintptr.
+	maxAlloc = ((_64bit * maxAllocLimit) + ((1 - _64bit) * ((1 << heapAddrBits) - 1)))
 
 	// The number of bits in a heap address, the size of heap
 	// arenas, and the L1 and L2 arena map sizes are related by
