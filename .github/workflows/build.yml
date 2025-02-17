@@ -44,10 +44,12 @@ jobs:
           tar czf go-memlimit-${{ matrix.os }}-${{ matrix.arch }}.tar.gz go/
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: go-memlimit-${{ matrix.os }}-${{ matrix.arch }}
           path: go-memlimit-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+        #   compression-level: 6
+        #   retention-days: 90
 
       - name: Create Release
         # if: startsWith(github.ref, 'refs/tags/')
