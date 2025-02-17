@@ -1,0 +1,58 @@
+name: Build Memory-Limited Go
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        arch: [amd64]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bootstrap Go
+        uses: actions/setup-go@v5
+        # with:
+        #   go-version: '1.23.2'
+
+      - name: Build Go (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd src
+          ./make.bash
+        env:
+          GOROOT_BOOTSTRAP: ${{ env.GOROOT }}
+
+      - name: Build Go (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cd src
+          .\make.bat
+        env:
+          GOROOT_BOOTSTRAP: ${{ env.GOROOT }}
+
+      - name: Create Release Archive
+        run: |
+          cd ..
+          tar czf go-memlimit-${{ matrix.os }}-${{ matrix.arch }}.tar.gz go/
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: go-memlimit-${{ matrix.os }}-${{ matrix.arch }}
+          path: go-memlimit-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+
+      - name: Create Release
+        # if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: go-memlimit-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
